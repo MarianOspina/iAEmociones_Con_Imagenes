@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Detector de Emociones</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>IA Detector de Emociones</h1>
+        <div class="upload-container">
+            <label for="file-upload" class="upload-label">Haz clic para subir una imagen</label>
+            <input type="file" id="file-upload" accept="image/*">
+        </div>
+        <div class="image-container">
+            <img id="uploaded-image" alt="Imagen subida">
+        </div>
+        <button id="detectButton">Detectar Emoción</button>
+        <p id="prediction-text"></p>
+    </div>
+    <script src="/static/scripts.js"></script>
+</body>
+</html>

@@ -1,37 +1,45 @@
-from typing import Union
-from fastapi import FastAPI
+from fastapi import FastAPI, File, UploadFile, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import tensorflow_hub as hub
-from tensorflow.keras.models import load_model
-from PIL import Image
-import requests
-from io import BytesIO
-import cv2
-from fastapi import FastAPI, UploadFile, File
 import numpy as np
+from PIL import Image
+import io
+from fastapi.templating import Jinja2Templates
 
-
-
+templates = Jinja2Templates(directory="templates")
 app = FastAPI()
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Configuración de CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def get_html(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
 with tf.keras.utils.custom_object_scope({'KerasLayer': hub.KerasLayer}):
-    modelo_cargado = load_model('modelo_entrenado.h5')
+    model = tf.keras.models.load_model('modelo/modelo_entrenado.h5')
 
-def predecir_emocion(img):
-    img = np.array(img).astype(float)/255
-    img = cv2.resize(img, (224,224))
-    prediccion = modelo_cargado.predict(img.reshape(-1, 224, 224, 3))
-    emocion = np.argmax(prediccion[0], axis=-1)
-    return emocion
-
-
-
-@app.post("/predict/")
-async def predecir_emocion(file: UploadFile = File(...)):
-    contenido = await file.read()
-    emocion = predecir_emocion(contenido)
-    return {"emocion": emocion}
+@app.post("/prediccion")
+async def predict(file: UploadFile = File(...)):
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    image = image.resize((224, 224)) 
+    image_array = np.array(image) / 255.0
+    image_array = np.expand_dims(image_array, axis=0) 
+    prediction = model.predict(image_array)
+    predicted_class = np.argmax(prediction)  
+    return int(predicted_class)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=3001)
